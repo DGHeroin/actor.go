@@ -71,18 +71,3 @@ func (s *ActorSystem) Shutdown() {
     }
     s.actors = make(map[string]*Actor)
 }
-
-func (s *ActorSystem) onResponse(target string, id int64, payload []byte, e string) {
-    s.mu.RLock()
-    a, exists := s.actors[target]
-    s.mu.RUnlock()
-    
-    if !exists {
-        return
-    }
-    var p interface{} = a
-    
-    if a, ok := p.(*remoteActorRef); ok {
-        a.onResponse(id, payload, e)
-    }
-}

@@ -4,6 +4,7 @@ import (
     "context"
     "fmt"
     "github.com/DGHeroin/actor.go"
+    "strings"
     "time"
 )
 
@@ -23,7 +24,7 @@ func setupClient() {
     }
     {
         // tell
-        err := ref.Tell("say hello")
+        err := ref.Tell("[local] hello")
         if err != nil {
             panic(err)
             return
@@ -33,7 +34,7 @@ func setupClient() {
     {
         // request
         var resp string
-        err := ref.Request(context.Background(), "do request", &resp)
+        err := ref.Request(context.Background(), "[rpc]do request", &resp)
         if err != nil {
             panic(err)
             return
@@ -46,23 +47,24 @@ func setupClient() {
 func setupServer() {
     sys := actor.NewActorSystem()
     
-    ref, err := sys.RegisterActor("test-actor", func(msg interface{}) (interface{}, error) {
+    _, err := sys.RegisterActor("test-actor", func(msg interface{}) (interface{}, error) {
         switch m := msg.(type) {
         case string, []byte:
-            fmt.Printf("received message:%s\n", m)
+            v := fmt.Sprintf("%v", m)
+            if strings.HasPrefix(v, "[local]") {
+                return "[local] world", nil
+            }
+            if strings.HasPrefix(v, "[rpc]") {
+                return "[rpc] world", nil
+            }
         }
         return "world", nil
     })
     if err != nil {
         panic(err)
     }
-    var resp string
-    if err := ref.Request(context.Background(), "hello", &resp); err != nil {
-        panic(err)
-        return
-    }
-    fmt.Println("response:", resp)
-    server := actor.NewActorServer(sys)
+    
+    server := actor.NewActorServer(sys, 100)
     
     if err := server.Serve("127.0.0.1:8888"); err != nil {
         panic(err)

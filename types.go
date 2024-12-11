@@ -1,18 +1,44 @@
 package actor
 
-import "context"
+import (
+    "context"
+    "errors"
+)
 
-// Message 表示actor之间传递的消息
+var (
+    ErrActorNotFound = errors.New("actor not found")
+    ErrMailboxFull   = errors.New("actor mailbox is full")
+    ErrActorStopped  = errors.New("actor is stopped")
+)
+
+// MessageType 定义消息类型
+type MessageType string
+
+const (
+    MessageTypeRequest MessageType = "Request"
+    MessageTypeTell    MessageType = "Tell"
+)
+
+// Message 表示一个actor消息
 type Message struct {
     Payload interface{}     // 消息内容
     ReplyTo chan Response   `json:"-"` // 响应通道
     Context context.Context `json:"-"` // 消息上下文
 }
 
-// Response 表示请求的响应
+// Response 表示一个响应
 type Response struct {
     Data  interface{} // 响应数据
     Error string      // 错误信息
+}
+
+// remoteMessage 表示一个远程消息
+type remoteMessage struct {
+    Type    MessageType `json:"type"`
+    Id      int64       `json:"id"`
+    Target  string      `json:"target"`
+    Payload interface{} `json:"payload"`
+    Error   string      `json:"error,omitempty"`
 }
 
 // ActorRef 表示actor的引用
