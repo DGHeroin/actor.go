@@ -1,6 +1,7 @@
 package actor
 
 import (
+    "bufio"
     "context"
     "encoding/json"
     "fmt"
@@ -46,8 +47,9 @@ func NewRemoteActorRef(id string, address string) (ActorRef, error) {
 // readLoop 持续读取响应
 func (r *remoteActorRef) readLoop() {
     defer r.cleanup()
+    reader := bufio.NewReaderSize(r.conn, 32*1024) // 32KB buffer
     
-    dec := json.NewDecoder(r.conn)
+    dec := json.NewDecoder(reader)
     for {
         var msg struct {
             Id      int64       `json:"id"`
@@ -76,7 +78,8 @@ func (r *remoteActorRef) readLoop() {
 
 // writeLoop 持续写入请求
 func (r *remoteActorRef) writeLoop() {
-    enc := json.NewEncoder(r.conn)
+    writer := bufio.NewWriterSize(r.conn, 32*1024)
+    enc := json.NewEncoder(writer)
     for msg := range r.writeCh {
         if err := enc.Encode(msg); err != nil {
             r.handleError(fmt.Errorf("write failed: %w", err))

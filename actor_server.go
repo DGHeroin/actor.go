@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -72,8 +73,10 @@ func (s *ActorServer) acceptLoop() {
 }
 
 func (s *ActorServer) handleConnection(conn net.Conn) {
-	dec := json.NewDecoder(conn)
-	enc := json.NewEncoder(conn)
+	reader := bufio.NewReaderSize(conn, 32*1024)
+	writer := bufio.NewWriterSize(conn, 32*1024)
+	dec := json.NewDecoder(reader)
+	enc := json.NewEncoder(writer)
 	var encMu sync.Mutex
 
 	for {
